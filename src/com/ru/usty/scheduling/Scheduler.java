@@ -1,7 +1,11 @@
 package com.ru.usty.scheduling;
 import java.util.*;
+import java.util.Comparator;
+
 
 import com.ru.usty.scheduling.process.ProcessExecution;
+import com.ru.usty.scheduling.ProcessShortestTime;
+import com.ru.usty.scheduling.process.ProcessInfo;
 
 public class Scheduler {
 
@@ -11,6 +15,10 @@ public class Scheduler {
 	boolean isOnCPU;
 
 	Queue<Integer> queue;
+	Comparator<ProcessInfo> comparator;
+	PriorityQueue<Integer> queueP;
+
+	//þráður frumstilur her settur hér
 
 
 	/**
@@ -33,6 +41,8 @@ public class Scheduler {
 		this.quantum = quantum;
 		this.isOnCPU = false;
 		queue = new LinkedList<Integer>();
+		comparator = new ProcessShortestTime();
+		queueP = new PriorityQueue<Integer>( 1, comparator);
 
 
 		switch(policy) {
@@ -43,14 +53,12 @@ public class Scheduler {
 		case RR:	//Round robin
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
 			/**
-			 * Add your policy specific initialization code here (if needed)
+			 * bua til nýtt fall fyrir for lykju sem sleepar í akveðin tima og skipir svo um process
 			 */
 			break;
 		case SPN:	//Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+
 			break;
 		case SRT:	//Shortest remaining time
 			System.out.println("Starting new scheduling task: Shortest remaining time");
@@ -102,13 +110,24 @@ public class Scheduler {
 			case SPN:	//Shortest process next
 				System.out.println("Starting new scheduling task: Shortest process next");
 				/**
-				 * Add your policy specific initialization code here (if needed)
+				 * process.getTotalServiceTime())
 				 */
+				if(queueP.isEmpty() && isOnCPU == false){
+					System.out.println("er tomt " + processID);
+					processExecution.switchToProcess(processID);
+					isOnCPU = true;
+
+				}
+				else {
+					System.out.println("adda í queue" + processID);
+
+					queueP.add(processID, processExecution.getProcessInfo(processID));
+				}
 				break;
 			case SRT:	//Shortest remaining time
 				System.out.println("Starting new scheduling task: Shortest remaining time");
 				/**
-				 * Add your policy specific initialization code here (if needed)
+				 * process.getTotalServiceTime()) - process.getElapsedExecutionTime(),
 				 */
 				break;
 			case HRRN:	//Highest response ratio next
@@ -147,7 +166,9 @@ public class Scheduler {
 
 				break;
 			case RR:	//Round robin
-				
+				queue.add(processID);
+
+
 				break;
 			case SPN:	//Shortest process next
 				System.out.println("Starting new scheduling task: Shortest process next");
@@ -174,8 +195,5 @@ public class Scheduler {
 				 */
 				break;
 		}
-
-
-
 	}
 }
