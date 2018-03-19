@@ -1,23 +1,28 @@
 package com.ru.usty.scheduling;
-import com.ru.usty.scheduling.process.ProcessInfo;
-import com.sun.xml.internal.ws.api.PropertySet;
 
 import java.util.Comparator;
 
-
-public class ProcessShortestTime  implements Comparator<ProcessInfo>{
+public class ProcessShortestTime  implements Comparator<Integer>{
+	
+	Scheduler SPNSchedule;
+	
+	public ProcessShortestTime(Scheduler SPNSchedule){
+		this.SPNSchedule = SPNSchedule;
+	}
 
     @Override
-    public int compare(ProcessInfo x, ProcessInfo y)
+    public int compare(Integer x, Integer y)
     {
         // Assume neither string is null. Real code should
         // probably be more robust
         // You could also just return x.length() - y.length(),
         // which would be more efficient.
-        if (x.totalServiceTime < y.totalServiceTime) {
+    		long process1 = SPNSchedule.processExecution.getProcessInfo(x).totalServiceTime;
+    		long process2 = SPNSchedule.processExecution.getProcessInfo(y).totalServiceTime;
+        if (process1 < process2) {
             return -1;
         }
-        if (x.totalServiceTime > y.totalServiceTime) {
+        if (process1 > process2) {
             return 1;
         }
         return 0;
