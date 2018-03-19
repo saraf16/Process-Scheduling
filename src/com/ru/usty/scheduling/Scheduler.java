@@ -1,4 +1,5 @@
 package com.ru.usty.scheduling;
+import java.util.*;
 
 import com.ru.usty.scheduling.process.ProcessExecution;
 
@@ -8,9 +9,7 @@ public class Scheduler {
 	Policy policy;
 	int quantum;
 
-	/**
-	 * Add any objects and variables here (if needed)
-	 */
+	Queue<Integer> queue = new LinkedList<Integer>();
 
 
 	/**
@@ -39,9 +38,9 @@ public class Scheduler {
 		switch(policy) {
 		case FCFS:	//First-come-first-served
 			System.out.println("Starting new scheduling task: First-come-first-served");
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+
+
+
 			break;
 		case RR:	//Round robin
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
@@ -86,9 +85,15 @@ public class Scheduler {
 	 */
 	public void processAdded(int processID) {
 
-		/**
-		 * Add scheduling code here
-		 */
+		if(processID== 0){
+			System.out.println("er tomt " + processID);
+			processExecution.switchToProcess(processID);
+
+		}
+		else {
+			System.out.println("adda í queue" + processID);
+			queue.add(processID);
+		}
 
 	}
 
@@ -96,10 +101,11 @@ public class Scheduler {
 	 * DO NOT CHANGE DEFINITION OF OPERATION
 	 */
 	public void processFinished(int processID) {
+		System.out.println("Finish " + processID);
 
-		/**
-		 * Add scheduling code here
-		 */
+		int newprocess = queue.remove();
+		processExecution.switchToProcess(newprocess);
+
 
 	}
 }
