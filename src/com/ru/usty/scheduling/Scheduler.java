@@ -4,13 +4,14 @@ import java.util.Comparator;
 
 
 import com.ru.usty.scheduling.process.ProcessExecution;
-import com.ru.usty.scheduling.ProcessShortestTime;
+import com.ru.usty.scheduling.ShortestProcessNext;
 
 public class Scheduler {
 
 	ProcessExecution processExecution;
 	Policy policy;
 	int quantum;
+	int processRunning;
 	boolean isOnCPU;
 
 	Queue<Integer> queue;
@@ -39,15 +40,11 @@ public class Scheduler {
 		this.policy = policy;
 		this.quantum = quantum;
 		this.isOnCPU = false;
-		queue = new LinkedList<Integer>();
-		comparator = new ProcessShortestTime(this);
-		queueP = new PriorityQueue<Integer>( 10, comparator);
-
 
 		switch(policy) {
 		case FCFS:	//First-come-first-served
 			System.out.println("Starting new scheduling task: First-come-first-served");
-
+			queue = new LinkedList<Integer>();
 			break;
 		case RR:	//Round robin
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
@@ -57,12 +54,13 @@ public class Scheduler {
 			break;
 		case SPN:	//Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
+			comparator = new ShortestProcessNext(this);
+			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case SRT:	//Shortest remaining time
 			System.out.println("Starting new scheduling task: Shortest remaining time");
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			comparator = new ShortestRemainingTime(this);
+			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case HRRN:	//Highest response ratio next
 			System.out.println("Starting new scheduling task: Highest response ratio next");
@@ -115,6 +113,23 @@ public class Scheduler {
 				/**
 				 * process.getTotalServiceTime()) - process.getElapsedExecutionTime(),
 				 */
+				if(queueP.isEmpty() && isOnCPU == false){
+					processExecution.switchToProcess(processID);
+					processRunning = processID;
+					isOnCPU = true;
+				}
+				else {
+					System.out.println("ProcessID -> " + processID);
+					System.out.println("processRunning -> " + processRunning);
+					if (comparator.compare(processID, processRunning) < 0) {
+						processExecution.switchToProcess(processID);
+						queueP.add(processRunning);
+						processRunning = processID;
+					}
+					else {
+						queueP.add(processID);
+					}	
+				}
 				break;
 			case HRRN:	//Highest response ratio next
 				/**
@@ -162,6 +177,15 @@ public class Scheduler {
 				/**
 				 * Add your policy specific initialization code here (if needed)
 				 */
+				System.out.println("Finish " + processID);
+				if(!queueP.isEmpty() && isOnCPU == true){
+					int newprocess = queueP.remove();
+					processExecution.switchToProcess(newprocess);
+					processRunning = newprocess;
+				}
+				else {
+					isOnCPU = false;
+				}
 				break;
 			case HRRN:	//Highest response ratio next
 				/**

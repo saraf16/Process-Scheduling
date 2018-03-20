@@ -2,11 +2,11 @@ package com.ru.usty.scheduling;
 
 import java.util.Comparator;
 
-public class ProcessShortestTime  implements Comparator<Integer>{
+public class ShortestProcessNext  implements Comparator<Integer>{
 	
 	Scheduler SPNSchedule;
 	
-	public ProcessShortestTime(Scheduler SPNSchedule){
+	public ShortestProcessNext(Scheduler SPNSchedule){
 		this.SPNSchedule = SPNSchedule;
 	}
 
