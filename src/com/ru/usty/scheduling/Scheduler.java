@@ -1,6 +1,7 @@
 package com.ru.usty.scheduling;
 import java.util.*;
 import java.util.Comparator;
+import java.util.concurrent.Semaphore;
 
 
 import com.ru.usty.scheduling.process.ProcessExecution;
@@ -17,8 +18,11 @@ public class Scheduler {
 	Queue<Integer> queue;
 	Comparator<Integer> comparator;
 	PriorityQueue<Integer> queueP;
+	Thread rrThread;
+    Semaphore queueMutex;
 
-	//þráður frumstilur her settur hér
+
+    //þráður frumstilur her settur hér
 
 
 	/**
@@ -41,6 +45,7 @@ public class Scheduler {
 		this.quantum = quantum;
 		this.isOnCPU = false;
 
+
 		switch(policy) {
 		case FCFS:	//First-come-first-served
 			System.out.println("Starting new scheduling task: First-come-first-served");
@@ -48,10 +53,13 @@ public class Scheduler {
 			break;
 		case RR:	//Round robin
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
-			/**
-			 * bua til nýtt fall fyrir for lykju sem sleepar í akveðin tima og skipir svo um process
-			 */
-			break;
+
+            queue = new LinkedList<Integer>();
+            queueMutex = new Semaphore(1);
+            this.rrThread = new Thread(newRunnable());
+            rrThread.start();
+
+            break;
 		case SPN:	//Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
 			comparator = new ShortestProcessNext(this);
@@ -98,6 +106,14 @@ public class Scheduler {
 				}
 				break;
 			case RR:	//Round robin
+                try {
+                    queueMutex.acquire();
+                        queue.add(processID);
+                    queueMutex.release();
+                } catch (InterruptedException e){
+                    e.printStackTrace();
+                }
+
 
 				break;
 			case SPN:	//Shortest process next
@@ -162,6 +178,17 @@ public class Scheduler {
 				}
 				break;
 			case RR:	//Round robin
+
+                try{
+                    if(queue.isEmpty() && isOnCPU == false){
+                        rrThread.join();
+
+                    }
+                }catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+
 				break;
 			case SPN:	//Shortest process next
 				System.out.println("Finish " + processID);
@@ -199,4 +226,44 @@ public class Scheduler {
 				break;
 		}
 	}
+
+    private  Runnable newRunnable (){
+        return new Runnable() {
+
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(5);
+                    }catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if(!queue.isEmpty()){
+                        processRunning = queue.remove();
+                        processExecution.switchToProcess(processRunning);
+                        System.out.println("current systemtime -> " + System.currentTimeMillis());
+                        isOnCPU = true;
+
+                        try {
+                            Thread.sleep(quantum);
+                        }catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        try {
+                            queueMutex.acquire();
+                            queue.add(processRunning);
+                            queueMutex.release();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    //if(queue.isEmpty() && isOnCPU == false){
+                    //    break;
+                    //}
+                }
+            }
+        };
+    }
 }
