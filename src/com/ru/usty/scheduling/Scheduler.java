@@ -21,7 +21,7 @@ public class Scheduler {
 	ArrayList<Integer> finishArray;
 	Thread rrThread;
     Semaphore queueMutex;
-    long laststartTime;
+    long lastStartTime;
 
 
     //þráður frumstilur her settur hér
@@ -183,6 +183,21 @@ public class Scheduler {
 			case RR:	//Round robin
 				System.out.println("Finish " + processID);
 				finishArray.add(processID);
+				if(!queue.isEmpty() && isOnCPU == true){
+                    try {
+                    	    queueMutex.acquire();
+                        processRunning = queue.remove();
+                        queueMutex.release();
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+					processExecution.switchToProcess(processRunning);
+					lastStartTime = System.currentTimeMillis();
+				}
+				else {
+					isOnCPU = false;
+				}
+				
 				/*if(!queue.isEmpty() && isOnCPU == true ){
 					int newprocess = queue.remove();
 					processExecution.switchToProcess(newprocess);
@@ -252,25 +267,33 @@ public class Scheduler {
                     }
                     if(!queue.isEmpty()){
                         isOnCPU = true;
-                        processRunning = queue.remove();
-                        processExecution.switchToProcess(processRunning);
-                        laststartTime = System.currentTimeMillis();
- 
-
                         try {
-                        		Thread.sleep(quantum);
-                        	    while( (System.currentTimeMillis() - laststartTime) < quantum) {
-                        	    		Thread.sleep(quantum - (System.currentTimeMillis() - laststartTime));
-                        		}
+							queueMutex.acquire();
+	                        processRunning = queue.remove();
+	                        queueMutex.release();
+						} catch (InterruptedException e1) {
+							e1.printStackTrace();
+						}
 
+                        processExecution.switchToProcess(processRunning);
+                        lastStartTime = System.currentTimeMillis();
+ 
+                        try {
+                        	    Thread.sleep(quantum);
+                        	    while((System.currentTimeMillis() - lastStartTime) < quantum) {
+                        	    		Thread.sleep(quantum - (System.currentTimeMillis() - lastStartTime));
+                        		}
                         }catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         
-                        //System.out.println("elapsedExecutionTime " + processExecution.getProcessInfo(processRunning).elapsedExecutionTime);
-                        //System.out.println("totalServiceTime " + processExecution.getProcessInfo(processRunning).totalServiceTime);
+	        				/*while(!finishArray.contains(processRunning)){
+	        					if(System.currentTimeMillis() > lastStartTime + quantum){
+	        						break;
+	        					}
+	        				}*/
                         
-                        if(!finishArray.contains(processRunning)) {
+	                    if(!finishArray.contains(processRunning)) {
 	                        try {
 	                            queueMutex.acquire();
 	                            queue.add(processRunning);
@@ -278,8 +301,8 @@ public class Scheduler {
 	                        } catch (InterruptedException e) {
 	                            e.printStackTrace();
 	                        }
-                    	    }
-                    }
+	                	    }
+                }
 
                     //if(queue.isEmpty() && isOnCPU == false){
                     //    break;
