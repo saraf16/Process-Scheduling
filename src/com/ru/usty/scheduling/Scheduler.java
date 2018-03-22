@@ -18,6 +18,7 @@ public class Scheduler {
 	Queue<Integer> queue;
 	Comparator<Integer> comparator;
 	PriorityQueue<Integer> queueP;
+	ArrayList<Integer> finishArray;
 	Thread rrThread;
     Semaphore queueMutex;
 
@@ -55,6 +56,7 @@ public class Scheduler {
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
 
             queue = new LinkedList<Integer>();
+            finishArray = new ArrayList<Integer>();
             queueMutex = new Semaphore(1);
             this.rrThread = new Thread(newRunnable());
             rrThread.start();
@@ -178,15 +180,24 @@ public class Scheduler {
 				}
 				break;
 			case RR:	//Round robin
-
-                try{
+				System.out.println("Finish " + processID);
+				finishArray.add(processID);
+				/*if(!queue.isEmpty() && isOnCPU == true ){
+					int newprocess = queue.remove();
+					processExecution.switchToProcess(newprocess);
+				}
+				else {
+					isOnCPU = false;
+				}*/
+				
+                /*try{
                     if(queue.isEmpty() && isOnCPU == false){
                         rrThread.join();
 
                     }
                 }catch (InterruptedException e) {
                     e.printStackTrace();
-                }
+                }*/
 
 
 				break;
@@ -239,24 +250,37 @@ public class Scheduler {
                         e.printStackTrace();
                     }
                     if(!queue.isEmpty()){
+                        isOnCPU = true;
                         processRunning = queue.remove();
                         processExecution.switchToProcess(processRunning);
-                        System.out.println("current systemtime -> " + System.currentTimeMillis());
-                        isOnCPU = true;
+                        long startTime = System.currentTimeMillis();
+                        //long finishTime = System.currentTimeMillis();
+                        //System.out.println("current systemtime -> " + System.currentTimeMillis());
+                        //System.currentTimeMillis()>startTime + quantum
 
                         try {
-                            Thread.sleep(quantum);
+                        	    if(processExecution.getProcessInfo(processRunning).totalServiceTime < quantum) {
+                        	    		Thread.sleep(processExecution.getProcessInfo(processRunning).totalServiceTime);
+                        		}
+                        	    else {
+                                    Thread.sleep(quantum);                       	    	
+                        	    }
                         }catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-
-                        try {
-                            queueMutex.acquire();
-                            queue.add(processRunning);
-                            queueMutex.release();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        
+                        //System.out.println("elapsedExecutionTime " + processExecution.getProcessInfo(processRunning).elapsedExecutionTime);
+                        //System.out.println("totalServiceTime " + processExecution.getProcessInfo(processRunning).totalServiceTime);
+                        
+                        if(!finishArray.contains(processRunning)) {
+	                        try {
+	                            queueMutex.acquire();
+	                            queue.add(processRunning);
+	                            queueMutex.release();
+	                        } catch (InterruptedException e) {
+	                            e.printStackTrace();
+	                        }
+                    	    }
                     }
 
                     //if(queue.isEmpty() && isOnCPU == false){
