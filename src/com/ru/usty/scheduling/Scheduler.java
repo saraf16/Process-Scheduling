@@ -21,6 +21,7 @@ public class Scheduler {
 	ArrayList<Integer> finishArray;
 	Thread rrThread;
     Semaphore queueMutex;
+    long laststartTime;
 
 
     //þráður frumstilur her settur hér
@@ -244,7 +245,7 @@ public class Scheduler {
             @Override
             public void run() {
                 while (true) {
-                    try {
+                   try {
                         Thread.sleep(5);
                     }catch (InterruptedException e) {
                         e.printStackTrace();
@@ -253,18 +254,15 @@ public class Scheduler {
                         isOnCPU = true;
                         processRunning = queue.remove();
                         processExecution.switchToProcess(processRunning);
-                        long startTime = System.currentTimeMillis();
-                        //long finishTime = System.currentTimeMillis();
-                        //System.out.println("current systemtime -> " + System.currentTimeMillis());
-                        //System.currentTimeMillis()>startTime + quantum
+                        laststartTime = System.currentTimeMillis();
+ 
 
                         try {
-                        	    if(processExecution.getProcessInfo(processRunning).totalServiceTime < quantum) {
-                        	    		Thread.sleep(processExecution.getProcessInfo(processRunning).totalServiceTime);
+                        		Thread.sleep(quantum);
+                        	    while( (System.currentTimeMillis() - laststartTime) < quantum) {
+                        	    		Thread.sleep(quantum - (System.currentTimeMillis() - laststartTime));
                         		}
-                        	    else {
-                                    Thread.sleep(quantum);                       	    	
-                        	    }
+
                         }catch (InterruptedException e) {
                             e.printStackTrace();
                         }
