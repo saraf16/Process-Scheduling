@@ -195,44 +195,6 @@ public class Scheduler {
 		case RR: // Round robin
 			System.out.println("Finish " + processID);
 			finishArray.add(processID);
-			
-			/*try {
-				queueMutex.acquire();
-				if (!queue.isEmpty() && isOnCPU == true) {
-					processRunning = queue.remove();
-					processExecution.switchToProcess(processRunning);
-					lastStartTime = System.currentTimeMillis();
-				} else {
-					isOnCPU = false;
-				}
-				queueMutex.release();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			/*try {
-				queueMutex.acquire();
-				if (!queue.isEmpty() && isOnCPU == true) {
-					processRunning = queue.remove();
-					processExecution.switchToProcess(processRunning);
-					lastStartTime = System.currentTimeMillis();
-				} else {
-					isOnCPU = false;
-				}
-				queueMutex.release();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-			/*
-			 * if(!queue.isEmpty() && isOnCPU == true ){ int newprocess = queue.remove();
-			 * processExecution.switchToProcess(newprocess); } else { isOnCPU = false; }
-			 */
-
-			/*
-			 * try{ if(queue.isEmpty() && isOnCPU == false){ rrThread.join();
-			 * 
-			 * } }catch (InterruptedException e) { e.printStackTrace(); }
-			 */
 
 			break;
 		case SPN: // Shortest process next
@@ -288,7 +250,6 @@ public class Scheduler {
 							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
-							//processRunning = queue.remove();
 							processExecution.switchToProcess(processRunning);
 							lastStartTime = System.currentTimeMillis();
 						}
@@ -296,15 +257,6 @@ public class Scheduler {
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
-
-					/*try {
-						Thread.sleep(quantum);
-						while ((System.currentTimeMillis() - lastStartTime) < quantum) {
-							Thread.sleep(quantum - (System.currentTimeMillis() - lastStartTime));
-						}
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}*/
 					
 					while(!finishArray.contains(processRunning)){
 						if(System.currentTimeMillis() >= lastStartTime + quantum){
