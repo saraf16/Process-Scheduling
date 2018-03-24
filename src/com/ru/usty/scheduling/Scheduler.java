@@ -85,9 +85,8 @@ public class Scheduler {
 			break;
 		case HRRN: // Highest response ratio next
 			System.out.println("Starting new scheduling task: Highest response ratio next");
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			comparator = new HighestResponseRatio(this);
+			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case FB: // Feedback
 			System.out.println("Starting new scheduling task: Feedback, quantum = " + quantum);
@@ -161,9 +160,12 @@ public class Scheduler {
 			}
 			break;
 		case HRRN: // Highest response ratio next
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			if (queueP.isEmpty() && isOnCPU == false) {
+				processExecution.switchToProcess(processID);
+				isOnCPU = true;
+			} else {
+				queueP.add(processID);
+			}
 			break;
 		case FB: // Feedback
 			/**
@@ -254,9 +256,13 @@ public class Scheduler {
 			}
 			break;
 		case HRRN: // Highest response ratio next
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			System.out.println("Finish " + processID);
+			if (!queueP.isEmpty() && isOnCPU == true) {
+				int newprocess = queueP.remove();
+				processExecution.switchToProcess(newprocess);
+			} else {
+				isOnCPU = false;
+			}
 			break;
 		case FB: // Feedback
 			/**
