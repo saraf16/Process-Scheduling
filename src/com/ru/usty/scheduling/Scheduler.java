@@ -191,7 +191,21 @@ public class Scheduler {
 		case RR: // Round robin
 			System.out.println("Finish " + processID);
 			finishArray.add(processID);
+			
 			try {
+				queueMutex.acquire();
+				if (!queue.isEmpty() && isOnCPU == true) {
+					processRunning = queue.remove();
+					processExecution.switchToProcess(processRunning);
+					lastStartTime = System.currentTimeMillis();
+				} else {
+					isOnCPU = false;
+				}
+				queueMutex.release();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			/*try {
 				queueMutex.acquire();
 				if (!queue.isEmpty() && isOnCPU == true) {
 					processRunning = queue.remove();
@@ -270,15 +284,20 @@ public class Scheduler {
 						e1.printStackTrace();
 					}
 
-					try {
+					/*try {
 						Thread.sleep(quantum);
 						while ((System.currentTimeMillis() - lastStartTime) < quantum) {
 							Thread.sleep(quantum - (System.currentTimeMillis() - lastStartTime));
 						}
 					} catch (InterruptedException e) {
 						e.printStackTrace();
+					}*/
+					while(!finishArray.contains(processRunning)){
+						if(System.currentTimeMillis()>lastStartTime + quantum){
+							break;
+						}
 					}
-
+					/*
 					if (!finishArray.contains(processRunning)) {
 						try {
 							queueMutex.acquire();
@@ -287,7 +306,18 @@ public class Scheduler {
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
+					}*/
+					
+					try {
+						queueMutex.acquire();
+						if (!finishArray.contains(processRunning)) {
+							queue.add(processRunning);
+						}
+						queueMutex.release();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
+					
 					if (kill) {
 						System.out.println("Thread is dying !#%$&&!");
 						break;
