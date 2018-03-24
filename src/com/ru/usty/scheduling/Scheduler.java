@@ -23,6 +23,7 @@ public class Scheduler {
 	ArrayList<Integer> finishArray;
 	Thread rrThread;
 	Semaphore queueMutex;
+	Semaphore arrayMutex;
 	long lastStartTime;
 
 	// þráður frumstilur her settur hér
@@ -53,14 +54,6 @@ public class Scheduler {
 			queue = new LinkedList<Integer>();
 			break;
 		case RR: // Round robin
-			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
-
-			queue = new LinkedList<Integer>();
-			finishArray = new ArrayList<Integer>();
-			queueMutex = new Semaphore(1);
-			this.rrThread = new Thread(newRunnable());
-			runThread = false;
-
 			if (rrThread != null && rrThread.isAlive()) {
 				System.out.println("Thread is dying !!!");
 				try {
@@ -71,6 +64,15 @@ public class Scheduler {
 				}
 			}
 			kill = false;
+			
+			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
+
+			queue = new LinkedList<Integer>();
+			finishArray = new ArrayList<Integer>();
+			queueMutex = new Semaphore(1);
+			arrayMutex = new Semaphore(1);
+			this.rrThread = new Thread(newRunnable());
+			runThread = false;
 
 			break;
 		case SPN: // Shortest process next
@@ -194,7 +196,7 @@ public class Scheduler {
 			System.out.println("Finish " + processID);
 			finishArray.add(processID);
 			
-			try {
+			/*try {
 				queueMutex.acquire();
 				if (!queue.isEmpty() && isOnCPU == true) {
 					processRunning = queue.remove();
@@ -281,7 +283,12 @@ public class Scheduler {
 						queueMutex.acquire();
 						if (!queue.isEmpty()) {
 							isOnCPU = true;
-							processRunning = queue.remove();
+							try {
+								processRunning = queue.remove();
+							} catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+							//processRunning = queue.remove();
 							processExecution.switchToProcess(processRunning);
 							lastStartTime = System.currentTimeMillis();
 						}
@@ -298,21 +305,12 @@ public class Scheduler {
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}*/
+					
 					while(!finishArray.contains(processRunning)){
-						if(System.currentTimeMillis()>lastStartTime + quantum){
+						if(System.currentTimeMillis() >= lastStartTime + quantum){
 							break;
 						}
 					}
-					/*
-					if (!finishArray.contains(processRunning)) {
-						try {
-							queueMutex.acquire();
-							queue.add(processRunning);
-							queueMutex.release();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}*/
 					
 					try {
 						queueMutex.acquire();
