@@ -13,10 +13,7 @@ public class ShortestProcessNext  implements Comparator<Integer>{
     @Override
     public int compare(Integer x, Integer y)
     {
-        // Assume neither string is null. Real code should
-        // probably be more robust
-        // You could also just return x.length() - y.length(),
-        // which would be more efficient.
+
     		long process1 = SPNSchedule.processExecution.getProcessInfo(x).totalServiceTime;
     		long process2 = SPNSchedule.processExecution.getProcessInfo(y).totalServiceTime;
         if (process1 < process2) {

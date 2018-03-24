@@ -26,22 +26,11 @@ public class Scheduler {
 	Semaphore arrayMutex;
 	long lastStartTime;
 
-	// þráður frumstilur her settur hér
-
-	/**
-	 * DO NOT CHANGE DEFINITION OF OPERATION
-	 */
 	public Scheduler(ProcessExecution processExecution) {
 		this.processExecution = processExecution;
 
-		/**
-		 * Add general initialization code here (if needed)
-		 */
 	}
 
-	/**
-	 * DO NOT CHANGE DEFINITION OF OPERATION
-	 */
 	public void startScheduling(Policy policy, int quantum) {
 
 		this.policy = policy;
@@ -66,14 +55,12 @@ public class Scheduler {
 			kill = false;
 			
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
-
 			queue = new LinkedList<Integer>();
 			finishArray = new ArrayList<Integer>();
 			queueMutex = new Semaphore(1);
 			arrayMutex = new Semaphore(1);
 			this.rrThread = new Thread(newRunnable());
 			runThread = false;
-
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
@@ -98,15 +85,9 @@ public class Scheduler {
 			break;
 		}
 
-		/**
-		 * Add general scheduling or initialization code here (if needed)
-		 */
 
 	}
 
-	/**
-	 * DO NOT CHANGE DEFINITION OF OPERATION
-	 */
 	public void processAdded(int processID) {
 
 		switch (policy) {
@@ -131,7 +112,6 @@ public class Scheduler {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
 			break;
 		case SPN: // Shortest process next
 			if (queueP.isEmpty() && isOnCPU == false) {
@@ -142,9 +122,6 @@ public class Scheduler {
 			}
 			break;
 		case SRT: // Shortest remaining time
-			/**
-			 * process.getTotalServiceTime()) - process.getElapsedExecutionTime(),
-			 */
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
 				processRunning = processID;
@@ -178,9 +155,6 @@ public class Scheduler {
 
 	}
 
-	/**
-	 * DO NOT CHANGE DEFINITION OF OPERATION
-	 */
 	public void processFinished(int processID) {
 		switch (policy) {
 		case FCFS: // First-come-first-served
@@ -195,7 +169,6 @@ public class Scheduler {
 		case RR: // Round robin
 			System.out.println("Finish " + processID);
 			finishArray.add(processID);
-
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Finish " + processID);
@@ -207,9 +180,6 @@ public class Scheduler {
 			}
 			break;
 		case SRT: // Shortest remaining time
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
 			System.out.println("Finish " + processID);
 			if (!queueP.isEmpty() && isOnCPU == true) {
 				int newprocess = queueP.remove();

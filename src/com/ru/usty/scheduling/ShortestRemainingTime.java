@@ -13,11 +13,6 @@ public class ShortestRemainingTime  implements Comparator<Integer>{
     @Override
     public int compare(Integer x, Integer y)
     {
-        // Assume neither string is null. Real code should
-        // probably be more robust
-        // You could also just return x.length() - y.length(),
-        // which would be more efficient.
-    		// process.getTotalServiceTime()) - process.getElapsedExecutionTime()
     		long process1 = SRTSchedule.processExecution.getProcessInfo(x).totalServiceTime - SRTSchedule.processExecution.getProcessInfo(x).elapsedExecutionTime;
     		long process2 = SRTSchedule.processExecution.getProcessInfo(y).totalServiceTime - SRTSchedule.processExecution.getProcessInfo(y).elapsedExecutionTime;
     		
