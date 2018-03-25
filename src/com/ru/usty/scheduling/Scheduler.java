@@ -82,6 +82,8 @@ public class Scheduler {
 			break;
 		case HRRN: // Highest response ratio next
 			System.out.println("Starting new scheduling task: Highest response ratio next");
+			responseTimes = new ArrayList<Long>();
+			turnaroundTimes  = new ArrayList<Long>();
 			comparator = new HighestResponseRatio(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
@@ -153,8 +155,11 @@ public class Scheduler {
 			}
 			break;
 		case HRRN: // Highest response ratio next
+			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
+				timeMeasurements.onCPU = System.currentTimeMillis();
+				responseTimes.add(timeMeasurements.responseTime());
 				isOnCPU = true;
 			} else {
 				queueP.add(processID);
@@ -223,11 +228,18 @@ public class Scheduler {
 			break;
 		case HRRN: // Highest response ratio next
 			System.out.println("Finish " + processID);
+			timeMeasurements.executionTime = System.currentTimeMillis();
+			turnaroundTimes.add(timeMeasurements.turnaroundTime());
 			if (!queueP.isEmpty() && isOnCPU == true) {
 				int newprocess = queueP.remove();
 				processExecution.switchToProcess(newprocess);
+				timeMeasurements.onCPU = System.currentTimeMillis();
+				responseTimes.add(timeMeasurements.responseTime());
 			} else {
 				isOnCPU = false;
+			}
+			if (queueP.isEmpty() && isOnCPU == false){
+				calculateTimes();
 			}
 			break;
 		case FB: // Feedback
