@@ -71,6 +71,8 @@ public class Scheduler {
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
+			responseTimes = new ArrayList<Long>();
+			turnaroundTimes  = new ArrayList<Long>();
 			comparator = new ShortestProcessNext(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
@@ -126,6 +128,8 @@ public class Scheduler {
 		case SPN: // Shortest process next
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
+				timeMeasurements.onCPU = System.currentTimeMillis();
+				responseTimes.add(timeMeasurements.responseTime());
 				isOnCPU = true;
 			} else {
 				queueP.add(processID);
@@ -170,7 +174,8 @@ public class Scheduler {
 		switch (policy) {
 		case FCFS: // First-come-first-served
 			System.out.println("Finish " + processID);
-			turnaroundTimes.add(processExecution.getProcessInfo(processID).elapsedExecutionTime + processExecution.getProcessInfo(processID).elapsedWaitingTime);
+			timeMeasurements.executionTime = System.currentTimeMillis();
+			turnaroundTimes.add(timeMeasurements.turnaroundTime());
 			if (!queue.isEmpty() && isOnCPU == true) {
 				int newprocess = queue.remove();
 				processExecution.switchToProcess(newprocess);
@@ -181,17 +186,7 @@ public class Scheduler {
 			}
 			
 			if (queue.isEmpty() && isOnCPU == false){
-				long sum1 = 0;
-				long sum2 = 0;
-				for(long t: responseTimes) {
-					sum1 += t;
-				}
-				for(long t: turnaroundTimes) {
-					sum2 += t;
-				}
-				
-				System.out.println("Average response time for FCFS : " + sum1/responseTimes.size());
-				System.out.println("Average turnaround time for FCFS : " + sum2/turnaroundTimes.size());
+				calculateTimes();
 			}
 			
 			break;
@@ -201,11 +196,19 @@ public class Scheduler {
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Finish " + processID);
+			timeMeasurements.executionTime = System.currentTimeMillis();
+			turnaroundTimes.add(timeMeasurements.turnaroundTime());
 			if (!queueP.isEmpty() && isOnCPU == true) {
 				int newprocess = queueP.remove();
 				processExecution.switchToProcess(newprocess);
+				timeMeasurements.onCPU = System.currentTimeMillis();
+				responseTimes.add(timeMeasurements.responseTime());
 			} else {
 				isOnCPU = false;
+			}
+			
+			if (queue.isEmpty() && isOnCPU == false){
+				calculateTimes();
 			}
 			break;
 		case SRT: // Shortest remaining time
@@ -233,6 +236,20 @@ public class Scheduler {
 			 */
 			break;
 		}
+	}
+	
+	void calculateTimes() {
+		long sum1 = 0;
+		long sum2 = 0;
+		for(long t: responseTimes) {
+			sum1 += t;
+		}
+		for(long t: turnaroundTimes) {
+			sum2 += t;
+		}
+		
+		System.out.println("Average response time for " + this.policy + ": " + sum1/responseTimes.size());
+		System.out.println("Average turnaround time for " + this.policy + ": " + sum2/turnaroundTimes.size());
 	}
 
 	private Runnable newRunnable() {

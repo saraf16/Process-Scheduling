@@ -13,16 +13,11 @@ public class TimeMeasurements {
 		this.onCPU = 0;
 	}
 	
-	public TimeMeasurements(long waitingTime, long executionTime){
-		this.waitingTime = waitingTime;
-		this.executionTime = executionTime;
-	}
-	
 	public long responseTime () {
 		return this.onCPU - this.arrivalTime;
 	}
 	public long turnaroundTime () {
-		return this.onCPU - this.arrivalTime;
+		return this.executionTime - this.arrivalTime;
 	}
 	
 }
