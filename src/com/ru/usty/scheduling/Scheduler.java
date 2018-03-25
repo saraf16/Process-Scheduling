@@ -1,10 +1,10 @@
 package com.ru.usty.scheduling;
 
 import java.util.*;
-import java.util.Comparator;
 import java.util.concurrent.Semaphore;
 
 import com.ru.usty.scheduling.process.ProcessExecution;
+import com.ru.usty.scheduling.process.ProcessInfo;
 import com.ru.usty.scheduling.ShortestProcessNext;
 
 public class Scheduler {
@@ -13,6 +13,7 @@ public class Scheduler {
 	Policy policy;
 	int quantum;
 	int processRunning;
+	int counter;
 	boolean isOnCPU;
 	boolean runThread;
 	boolean kill;
@@ -21,6 +22,9 @@ public class Scheduler {
 	Comparator<Integer> comparator;
 	PriorityQueue<Integer> queueP;
 	ArrayList<Integer> finishArray;
+	TimeMeasurements timeMeasurements;
+	ArrayList<Long> responseTimes;
+	ArrayList<Long> turnaroundTimes;
 	Thread rrThread;
 	Semaphore queueMutex;
 	Semaphore arrayMutex;
@@ -36,10 +40,13 @@ public class Scheduler {
 		this.policy = policy;
 		this.quantum = quantum;
 		this.isOnCPU = false;
-
+		this.counter = 0;
+		
 		switch (policy) {
 		case FCFS: // First-come-first-served
 			System.out.println("Starting new scheduling task: First-come-first-served");
+			responseTimes = new ArrayList<Long>();
+			turnaroundTimes  = new ArrayList<Long>();
 			queue = new LinkedList<Integer>();
 			break;
 		case RR: // Round robin
@@ -92,8 +99,11 @@ public class Scheduler {
 
 		switch (policy) {
 		case FCFS: // First-come-first-served
+			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
 			if (queue.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
+				timeMeasurements.onCPU = System.currentTimeMillis();
+				responseTimes.add(timeMeasurements.responseTime());
 				isOnCPU = true;
 			} else {
 				queue.add(processID);
@@ -152,6 +162,7 @@ public class Scheduler {
 			 */
 			break;
 		}
+		
 
 	}
 
@@ -159,12 +170,30 @@ public class Scheduler {
 		switch (policy) {
 		case FCFS: // First-come-first-served
 			System.out.println("Finish " + processID);
+			turnaroundTimes.add(processExecution.getProcessInfo(processID).elapsedExecutionTime + processExecution.getProcessInfo(processID).elapsedWaitingTime);
 			if (!queue.isEmpty() && isOnCPU == true) {
 				int newprocess = queue.remove();
 				processExecution.switchToProcess(newprocess);
+				timeMeasurements.onCPU = System.currentTimeMillis();
+				responseTimes.add(timeMeasurements.responseTime());
 			} else {
 				isOnCPU = false;
 			}
+			
+			if (queue.isEmpty() && isOnCPU == false){
+				long sum1 = 0;
+				long sum2 = 0;
+				for(long t: responseTimes) {
+					sum1 += t;
+				}
+				for(long t: turnaroundTimes) {
+					sum2 += t;
+				}
+				
+				System.out.println("Average response time for FCFS : " + sum1/responseTimes.size());
+				System.out.println("Average turnaround time for FCFS : " + sum2/turnaroundTimes.size());
+			}
+			
 			break;
 		case RR: // Round robin
 			System.out.println("Finish " + processID);
