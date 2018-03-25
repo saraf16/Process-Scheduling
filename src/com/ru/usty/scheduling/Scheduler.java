@@ -309,8 +309,9 @@ public class Scheduler {
 						e1.printStackTrace();
 					}
 					
+					long quantumCheck = lastStartTime + quantum;
 					while(!finishArray.contains(processRunning)){
-						if(System.currentTimeMillis() >= lastStartTime + quantum){
+						if(System.currentTimeMillis() >= quantumCheck){
 							break;
 						}
 					}
