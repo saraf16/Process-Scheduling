@@ -40,7 +40,6 @@ public class Scheduler {
 		this.policy = policy;
 		this.quantum = quantum;
 		this.isOnCPU = false;
-		this.counter = 0;
 		
 		switch (policy) {
 		case FCFS: // First-come-first-served
@@ -126,6 +125,7 @@ public class Scheduler {
 			}
 			break;
 		case SPN: // Shortest process next
+			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
 				timeMeasurements.onCPU = System.currentTimeMillis();
@@ -207,7 +207,7 @@ public class Scheduler {
 				isOnCPU = false;
 			}
 			
-			if (queue.isEmpty() && isOnCPU == false){
+			if (queueP.isEmpty() && isOnCPU == false){
 				calculateTimes();
 			}
 			break;

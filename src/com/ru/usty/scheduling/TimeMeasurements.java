@@ -11,6 +11,7 @@ public class TimeMeasurements {
 	public TimeMeasurements(long arrivalTime){
 		this.arrivalTime = arrivalTime;
 		this.onCPU = 0;
+		this.executionTime = 0;
 	}
 	
 	public long responseTime () {
