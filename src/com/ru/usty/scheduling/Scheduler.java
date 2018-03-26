@@ -329,40 +329,86 @@ public class Scheduler {
 					try {
 						queueMutex.acquire();
 						if(!queue1.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue1.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue1.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
 
 						}
 						else if(!queue2.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue2.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue2.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+
 						}
 						else if(!queue3.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue3.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue3.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+
+
 						}
 						else if(!queue4.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue4.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue4.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+
+
 						}
 						else if(!queue5.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue5.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue5.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+
+
 						}
 						else if(!queue6.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue6.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue6.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+
 						}
 						else if(!queue7.isEmpty()) {
-							isOnCPU = true;
-							processInfoFB = queue7.remove();
+							try {
+								isOnCPU = true;
+								processInfoFB = queue7.remove();
+							}
+							catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+
 						}
-
-						processExecution.switchToProcess(processInfoFB.processID);
-
+						queueMutex.release();
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
+
+					processExecution.switchToProcess(processInfoFB.processID);
+					lastStartTime = System.currentTimeMillis();
+
 
 					long quantumCheck = lastStartTime + quantum;
 					while((!finishArray.contains(processInfoFB.processID))){
@@ -387,16 +433,16 @@ public class Scheduler {
 									queue3.add(processInfoFB);
 									break;
 								case 4:
-									queue1.add(processInfoFB);
+									queue4.add(processInfoFB);
 									break;
 								case 5:
-									queue1.add(processInfoFB);
+									queue5.add(processInfoFB);
 									break;
 								case 6:
-									queue1.add(processInfoFB);
+									queue6.add(processInfoFB);
 									break;
 								case 7:
-									queue1.add(processInfoFB);
+									queue7.add(processInfoFB);
 									break;
 							}
 						}
