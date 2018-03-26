@@ -19,7 +19,7 @@ public class Scheduler {
 	Comparator<Integer> comparator;
 	PriorityQueue<Integer> queueP;
 	ArrayList<Integer> finishArray;
-	TimeMeasurements timeMeasurements;
+	ArrayList<TimeMeasurements> timeMeasurements;
 	ArrayList<Long> responseTimes, turnaroundTimes;
 	Thread thread;
 	Semaphore queueMutex;
@@ -39,9 +39,10 @@ public class Scheduler {
 		switch (policy) {
 		case FCFS: // First-come-first-served
 			System.out.println("Starting new scheduling task: First-come-first-served");
-			responseTimes = new ArrayList<Long>();
-			turnaroundTimes = new ArrayList<Long>();
+
+			timeMeasurements = new ArrayList<TimeMeasurements>();
 			queue = new LinkedList<Integer>();
+			counter = 0;
 			break;
 		case RR: // Round robin
 			if (thread != null && thread.isAlive()) {
@@ -57,8 +58,7 @@ public class Scheduler {
 
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
 
-			responseTimes = new ArrayList<Long>();
-			turnaroundTimes = new ArrayList<Long>();
+			timeMeasurements = new ArrayList<TimeMeasurements>();
 
 			queue = new LinkedList<Integer>();
 			finishArray = new ArrayList<Integer>();
@@ -69,24 +69,24 @@ public class Scheduler {
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
-			responseTimes = new ArrayList<Long>();
-			turnaroundTimes = new ArrayList<Long>();
+			timeMeasurements = new ArrayList<TimeMeasurements>();
 			comparator = new ShortestProcessNext(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
+			counter = 0;
 			break;
 		case SRT: // Shortest remaining time
 			System.out.println("Starting new scheduling task: Shortest remaining time");
-			responseTimes = new ArrayList<Long>();
-			turnaroundTimes = new ArrayList<Long>();
+			timeMeasurements = new ArrayList<TimeMeasurements>();
 			comparator = new ShortestRemainingTime(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
+			counter = 0;
 			break;
 		case HRRN: // Highest response ratio next
 			System.out.println("Starting new scheduling task: Highest response ratio next");
-			responseTimes = new ArrayList<Long>();
-			turnaroundTimes = new ArrayList<Long>();
+			timeMeasurements = new ArrayList<TimeMeasurements>();
 			comparator = new HighestResponseRatio(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
+			counter = 0;
 			break;
 		case FB: // Feedback
 			if (thread != null && thread.isAlive()) {
@@ -112,8 +112,7 @@ public class Scheduler {
 			queueMutex = new Semaphore(1);
 			counter = 0;
 			this.thread = new Thread(FeedbackRunnable());
-			responseTimes = new ArrayList<Long>();
-			turnaroundTimes = new ArrayList<Long>();
+			timeMeasurements = new ArrayList<TimeMeasurements>();
 			runThread = false;
 			break;
 		}
@@ -123,11 +122,11 @@ public class Scheduler {
 
 		switch (policy) {
 		case FCFS: // First-come-first-served
-			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
+			timeMeasurements.add(new TimeMeasurements(System.currentTimeMillis()));
+			
 			if (queue.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(processID).onCPU = System.currentTimeMillis();
 				isOnCPU = true;
 			} else {
 				queue.add(processID);
@@ -138,7 +137,7 @@ public class Scheduler {
 				thread.start();
 				runThread = true;
 			}
-			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
+			timeMeasurements.add(new TimeMeasurements(System.currentTimeMillis()));
 			try {
 				queueMutex.acquire();
 				queue.add(processID);
@@ -148,30 +147,27 @@ public class Scheduler {
 			}
 			break;
 		case SPN: // Shortest process next
-			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
+			timeMeasurements.add(new TimeMeasurements(System.currentTimeMillis()));
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(processID).onCPU = System.currentTimeMillis();
 				isOnCPU = true;
 			} else {
 				queueP.add(processID);
 			}
 			break;
 		case SRT: // Shortest remaining time
-			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
+			timeMeasurements.add(new TimeMeasurements(System.currentTimeMillis()));
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
 				processRunning = processID;
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(processRunning).onCPU = System.currentTimeMillis();
 				isOnCPU = true;
 			} else {
 				if (comparator.compare(processID, processRunning) < 0) {
 					processExecution.switchToProcess(processID);
 					queueP.add(processRunning);
-					timeMeasurements.onCPU = System.currentTimeMillis();
-					responseTimes.add(timeMeasurements.responseTime());
+					timeMeasurements.get(processID).onCPU = System.currentTimeMillis();
 					processRunning = processID;
 				} else {
 					queueP.add(processID);
@@ -179,11 +175,10 @@ public class Scheduler {
 			}
 			break;
 		case HRRN: // Highest response ratio next
-			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
+			timeMeasurements.add(new TimeMeasurements(System.currentTimeMillis()));
 			if (queueP.isEmpty() && isOnCPU == false) {
 				processExecution.switchToProcess(processID);
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(processID).onCPU = System.currentTimeMillis();
 				isOnCPU = true;
 			} else {
 				queueP.add(processID);
@@ -191,7 +186,7 @@ public class Scheduler {
 			break;
 		case FB: // Feedback
 			processInfoFB = new ProcessInfoFeedback(processID);
-			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
+			timeMeasurements.add(new TimeMeasurements(System.currentTimeMillis()));
 			if (runThread == false) {
 				thread.start();
 				runThread = true;
@@ -212,18 +207,17 @@ public class Scheduler {
 		switch (policy) {
 		case FCFS: // First-come-first-served
 			System.out.println("Finish " + processID);
-			timeMeasurements.executionTime = System.currentTimeMillis();
-			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
 			if (!queue.isEmpty() && isOnCPU == true) {
 				int newprocess = queue.remove();
 				processExecution.switchToProcess(newprocess);
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(newprocess).onCPU = System.currentTimeMillis();
 			} else {
 				isOnCPU = false;
 			}
 
-			if (queue.isEmpty() && isOnCPU == false) {
+			counter++;
+			if (counter == 15) {
 				calculateTimes();
 			}
 
@@ -231,10 +225,9 @@ public class Scheduler {
 		case RR: // Round robin
 			System.out.println("Finish " + processID);
 			finishArray.add(processID);
-			timeMeasurements.executionTime = System.currentTimeMillis();
-			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
+			
 			counter++;
-
 			if (counter == 15) {
 				calculateTimes();
 			}
@@ -242,60 +235,56 @@ public class Scheduler {
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Finish " + processID);
-			timeMeasurements.executionTime = System.currentTimeMillis();
-			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
 			if (!queueP.isEmpty() && isOnCPU == true) {
 				int newprocess = queueP.remove();
 				processExecution.switchToProcess(newprocess);
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(newprocess).onCPU = System.currentTimeMillis();
 			} else {
 				isOnCPU = false;
 			}
 
-			if (queueP.isEmpty() && isOnCPU == false) {
+			counter++;
+			if (counter == 15) {
 				calculateTimes();
 			}
 			break;
 		case SRT: // Shortest remaining time
 			System.out.println("Finish " + processID);
-			timeMeasurements.executionTime = System.currentTimeMillis();
-			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
 			if (!queueP.isEmpty() && isOnCPU == true) {
 				int newprocess = queueP.remove();
 				processExecution.switchToProcess(newprocess);
 				processRunning = newprocess;
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(newprocess).onCPU = System.currentTimeMillis();
 			} else {
 				isOnCPU = false;
 			}
-			if (queueP.isEmpty() && isOnCPU == false) {
+			counter++;
+			if (counter == 15) {
 				calculateTimes();
 			}
 			break;
 		case HRRN: // Highest response ratio next
 			System.out.println("Finish " + processID);
-			timeMeasurements.executionTime = System.currentTimeMillis();
-			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
 			if (!queueP.isEmpty() && isOnCPU == true) {
 				int newprocess = queueP.remove();
 				processExecution.switchToProcess(newprocess);
-				timeMeasurements.onCPU = System.currentTimeMillis();
-				responseTimes.add(timeMeasurements.responseTime());
+				timeMeasurements.get(newprocess).onCPU = System.currentTimeMillis();
 			} else {
 				isOnCPU = false;
 			}
-			if (queueP.isEmpty() && isOnCPU == false) {
+			counter++;
+			if (counter == 15) {
 				calculateTimes();
 			}
 			break;
 		case FB: // Feedback
 			finishArray.add(processID);
-			timeMeasurements.executionTime = System.currentTimeMillis();
-			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
+			
 			counter++;
-
 			if (counter == 15) {
 				calculateTimes();
 			}
@@ -306,15 +295,14 @@ public class Scheduler {
 	void calculateTimes() {
 		long sum1 = 0;
 		long sum2 = 0;
-		for (long t : responseTimes) {
-			sum1 += t;
+		int size = timeMeasurements.size();
+		
+		for (TimeMeasurements t : timeMeasurements) {
+			sum1 += t.responseTime();
+			sum2 += t.turnaroundTime();
 		}
-		for (long t : turnaroundTimes) {
-			sum2 += t;
-		}
-
-		System.out.println("Average response time for " + this.policy + ": " + sum1 / responseTimes.size());
-		System.out.println("Average turnaround time for " + this.policy + ": " + sum2 / turnaroundTimes.size());
+		System.out.println("Average response time for " + this.policy + ": " + sum1 / size);
+		System.out.println("Average turnaround time for " + this.policy + ": " + sum2 / size);
 	}
 
 	private Runnable FeedbackRunnable() {
@@ -328,10 +316,14 @@ public class Scheduler {
 							try {
 								isOnCPU = true;
 								pifb = queue1.remove();
-								if (!timeMeasurements.fCheck) {
-									timeMeasurements.onCPU = System.currentTimeMillis();
-									responseTimes.add(timeMeasurements.responseTime());
-									timeMeasurements.fCheck = true;
+								//if (!timeMeasurements.fCheck) {
+								//	timeMeasurements.onCPU = System.currentTimeMillis();
+								//	responseTimes.add(timeMeasurements.responseTime());
+								//	timeMeasurements.fCheck = true;
+								//}
+								if(!timeMeasurements.get(pifb.processID).fCheck) {
+									timeMeasurements.get(pifb.processID).onCPU = System.currentTimeMillis();
+									timeMeasurements.get(pifb.processID).fCheck = true;
 								}
 							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -461,10 +453,9 @@ public class Scheduler {
 							isOnCPU = true;
 							try {
 								processRunning = queue.remove();
-								if (!timeMeasurements.RRcheck) {
-									timeMeasurements.onCPU = System.currentTimeMillis();
-									responseTimes.add(timeMeasurements.responseTime());
-									timeMeasurements.RRcheck = true;
+								if(!timeMeasurements.get(processRunning).fCheck) {
+									timeMeasurements.get(processRunning).onCPU = System.currentTimeMillis();
+									timeMeasurements.get(processRunning).fCheck = true;
 								}
 							} catch (NullPointerException e) {
 								System.out.println("villa" + e);

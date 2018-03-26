@@ -1,7 +1,5 @@
 package com.ru.usty.scheduling;
 
-import java.util.ArrayList;
-
 public class TimeMeasurements {
 	public long arrivalTime;
 	public long onCPU;
