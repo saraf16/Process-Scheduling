@@ -308,7 +308,78 @@ public class Scheduler {
 		return new Runnable() {
 			@Override
 			public void run() {
-				
+				while (true) {
+					try {
+						queueMutex.acquire();
+						if (!queue.isEmpty()) {
+							isOnCPU = true;
+							try {
+								//processRunning = queue.remove();
+								if(!timeMeasurements.RRcheck) {
+									timeMeasurements.onCPU = System.currentTimeMillis();
+									responseTimes.add(timeMeasurements.responseTime());
+									timeMeasurements.RRcheck = true;
+								}
+								//timeMeasurements.onCPU = System.currentTimeMillis();
+								//responseTimes.add(timeMeasurements.responseTime());
+							} catch (NullPointerException e) {
+								System.out.println("villa" + e);
+							}
+							processExecution.switchToProcess(processRunning);
+							lastStartTime = System.currentTimeMillis();
+						}
+						queueMutex.release();
+
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+
+					long quantumCheck = lastStartTime + quantum;
+					while((!finishArray.contains(processRunning))){
+						if(System.currentTimeMillis() >= quantumCheck){
+							break;
+						}
+					}
+
+					try {
+						queueMutex.acquire();
+						int id = 1;
+						if (!finishArray.contains(processRunning)) {
+							switch (id) {
+								case '1':
+									queue1.add(processRunning);
+									break;
+								case '2':
+									queue2.add(processRunning);
+									break;
+								case '3':
+									queue3.add(processRunning);
+									break;
+								case '4':
+									queue1.add(processRunning);
+									break;
+								case '5':
+									queue1.add(processRunning);
+									break;
+								case '6':
+									queue1.add(processRunning);
+									break;
+								case '7':
+									queue1.add(processRunning);
+									break;
+							}
+						}
+						queueMutex.release();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					if (kill) {
+						System.out.println("Thread is dying !#%$&&!");
+						//calculateTimes();
+						break;
+					}
+				}
 			}
 		};
 	}
