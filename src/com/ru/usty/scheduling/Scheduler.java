@@ -18,7 +18,7 @@ public class Scheduler {
 	boolean kill;
 
 	Queue<Integer> queue;
-	Queue<Integer> queue1, queue2, queue3, queue4, queue5, queue6, queue7;
+	Queue<ProcessInfoFeedback> queue1, queue2, queue3, queue4, queue5, queue6, queue7;
 	Comparator<Integer> comparator;
 	PriorityQueue<Integer> queueP;
 	ArrayList<Integer> finishArray;
@@ -30,6 +30,7 @@ public class Scheduler {
 	Semaphore queueMutex;
 	Semaphore arrayMutex;
 	long lastStartTime;
+	ProcessInfoFeedback processInfoFB;
 
 	public Scheduler(ProcessExecution processExecution) {
 		this.processExecution = processExecution;
@@ -95,7 +96,6 @@ public class Scheduler {
 			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case FB: // Feedback
-			System.out.println("Starting new scheduling task: Feedback, quantum = " + quantum);
 			if (fThread != null && fThread.isAlive()) {
 				System.out.println("Thread is dying !!!");
 				try {
@@ -106,10 +106,20 @@ public class Scheduler {
 				}
 			}
 			kill = false;
-			
+
+			System.out.println("Starting new scheduling task: Feedback, quantum = " + quantum);
+			queue1= new LinkedList<ProcessInfoFeedback>();
+			queue2= new LinkedList<ProcessInfoFeedback>();
+			queue3= new LinkedList<ProcessInfoFeedback>();
+			queue4= new LinkedList<ProcessInfoFeedback>();
+			queue5= new LinkedList<ProcessInfoFeedback>();
+			queue6= new LinkedList<ProcessInfoFeedback>();
+			queue7= new LinkedList<ProcessInfoFeedback>();
+			finishArray = new ArrayList<Integer>();
+			queueMutex = new Semaphore(1);
+			arrayMutex = new Semaphore(1);
 			this.fThread = new Thread(feedbackRunnable());
 			runThread = false;
-			queue = new LinkedList<Integer>();
 			break;
 		}
 
@@ -189,9 +199,18 @@ public class Scheduler {
 			}
 			break;
 		case FB: // Feedback
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			processInfoFB = new ProcessInfoFeedback(processID);
+			if (runThread == false) {
+				fThread.start();
+				runThread = true;
+			}
+			try {
+				queueMutex.acquire();
+				queue1.add(processInfoFB);
+				queueMutex.release();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			break;
 		}
 		
@@ -281,9 +300,7 @@ public class Scheduler {
 			}
 			break;
 		case FB: // Feedback
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			finishArray.add(processID);
 			break;
 		}
 	}
@@ -311,61 +328,75 @@ public class Scheduler {
 				while (true) {
 					try {
 						queueMutex.acquire();
-						if (!queue.isEmpty()) {
+						if(!queue1.isEmpty()) {
 							isOnCPU = true;
-							try {
-								//processRunning = queue.remove();
-								if(!timeMeasurements.RRcheck) {
-									timeMeasurements.onCPU = System.currentTimeMillis();
-									responseTimes.add(timeMeasurements.responseTime());
-									timeMeasurements.RRcheck = true;
-								}
-								//timeMeasurements.onCPU = System.currentTimeMillis();
-								//responseTimes.add(timeMeasurements.responseTime());
-							} catch (NullPointerException e) {
-								System.out.println("villa" + e);
-							}
-							processExecution.switchToProcess(processRunning);
-							lastStartTime = System.currentTimeMillis();
+							processInfoFB = queue1.remove();
+
 						}
-						queueMutex.release();
+						else if(!queue2.isEmpty()) {
+							isOnCPU = true;
+							processInfoFB = queue2.remove();
+						}
+						else if(!queue3.isEmpty()) {
+							isOnCPU = true;
+							processInfoFB = queue3.remove();
+						}
+						else if(!queue4.isEmpty()) {
+							isOnCPU = true;
+							processInfoFB = queue4.remove();
+						}
+						else if(!queue5.isEmpty()) {
+							isOnCPU = true;
+							processInfoFB = queue5.remove();
+						}
+						else if(!queue6.isEmpty()) {
+							isOnCPU = true;
+							processInfoFB = queue6.remove();
+						}
+						else if(!queue7.isEmpty()) {
+							isOnCPU = true;
+							processInfoFB = queue7.remove();
+						}
+
+						processExecution.switchToProcess(processInfoFB.processID);
 
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
 
 					long quantumCheck = lastStartTime + quantum;
-					while((!finishArray.contains(processRunning))){
+					while((!finishArray.contains(processInfoFB.processID))){
 						if(System.currentTimeMillis() >= quantumCheck){
 							break;
 						}
 					}
+					processInfoFB.incrementQueueCounter();
 
 					try {
 						queueMutex.acquire();
-						int id = 1;
-						if (!finishArray.contains(processRunning)) {
-							switch (id) {
-								case '1':
-									queue1.add(processRunning);
+						int count =  processInfoFB.getQueueForProcess();
+						if (!finishArray.contains(processInfoFB.processID)) {
+							switch (count) {
+								case 1:
+									queue1.add(processInfoFB);
 									break;
-								case '2':
-									queue2.add(processRunning);
+								case 2:
+									queue2.add(processInfoFB);
 									break;
-								case '3':
-									queue3.add(processRunning);
+								case 3:
+									queue3.add(processInfoFB);
 									break;
-								case '4':
-									queue1.add(processRunning);
+								case 4:
+									queue1.add(processInfoFB);
 									break;
-								case '5':
-									queue1.add(processRunning);
+								case 5:
+									queue1.add(processInfoFB);
 									break;
-								case '6':
-									queue1.add(processRunning);
+								case 6:
+									queue1.add(processInfoFB);
 									break;
-								case '7':
-									queue1.add(processRunning);
+								case 7:
+									queue1.add(processInfoFB);
 									break;
 							}
 						}
@@ -376,7 +407,6 @@ public class Scheduler {
 
 					if (kill) {
 						System.out.println("Thread is dying !#%$&&!");
-						//calculateTimes();
 						break;
 					}
 				}
