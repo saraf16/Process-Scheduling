@@ -119,7 +119,10 @@ public class Scheduler {
 			finishArray = new ArrayList<Integer>();
 			queueMutex = new Semaphore(1);
 			arrayMutex = new Semaphore(1);
+			counter = 0;
 			this.fThread = new Thread(feedbackRunnable());
+			responseTimes = new ArrayList<Long>();
+			turnaroundTimes  = new ArrayList<Long>();
 			runThread = false;
 			break;
 		}
@@ -199,6 +202,7 @@ public class Scheduler {
 			break;
 		case FB: // Feedback
 			processInfoFB = new ProcessInfoFeedback(processID);
+			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
 			if (runThread == false) {
 				fThread.start();
 				runThread = true;
@@ -300,6 +304,13 @@ public class Scheduler {
 			break;
 		case FB: // Feedback
 			finishArray.add(processID);
+			timeMeasurements.executionTime = System.currentTimeMillis();
+			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			counter++;
+			
+			if(counter == 15) {
+				calculateTimes();
+			}
 			break;
 		}
 	}
@@ -330,6 +341,11 @@ public class Scheduler {
 							try {
 								isOnCPU = true;
 								pifb = queue1.remove();
+								if(!timeMeasurements.fCheck) {
+									timeMeasurements.onCPU = System.currentTimeMillis();
+									responseTimes.add(timeMeasurements.responseTime());
+									timeMeasurements.fCheck = true;
+								}
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -459,10 +475,6 @@ public class Scheduler {
 		};
 	}
 	
-	
-	
-	
-	
 	private Runnable roundRobinRunnable() {
 		return new Runnable() {
 			@Override
@@ -479,8 +491,6 @@ public class Scheduler {
 									responseTimes.add(timeMeasurements.responseTime());
 									timeMeasurements.RRcheck = true;
 								}
-								//timeMeasurements.onCPU = System.currentTimeMillis();
-								//responseTimes.add(timeMeasurements.responseTime());
 							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}

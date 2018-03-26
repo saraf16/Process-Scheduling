@@ -8,12 +8,14 @@ public class TimeMeasurements {
 	public long waitingTime;
 	public long executionTime;	
 	public boolean RRcheck;
+	public boolean fCheck;
 	
 	public TimeMeasurements(long arrivalTime){
 		this.arrivalTime = arrivalTime;
 		this.onCPU = 0;
 		this.executionTime = 0;
 		this.RRcheck = false;
+		this.fCheck = false;
 	}
 	
 	public long responseTime () {
