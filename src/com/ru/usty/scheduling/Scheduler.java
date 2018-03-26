@@ -31,6 +31,7 @@ public class Scheduler {
 	Semaphore arrayMutex;
 	long lastStartTime;
 	ProcessInfoFeedback processInfoFB;
+	ProcessInfoFeedback pifb;
 
 	public Scheduler(ProcessExecution processExecution) {
 		this.processExecution = processExecution;
@@ -122,8 +123,6 @@ public class Scheduler {
 			runThread = false;
 			break;
 		}
-
-
 	}
 
 	public void processAdded(int processID) {
@@ -321,7 +320,6 @@ public class Scheduler {
 
 	
 	private Runnable feedbackRunnable() {
-		// TODO Auto-generated method stub
 		return new Runnable() {
 			@Override
 			public void run() {
@@ -331,7 +329,7 @@ public class Scheduler {
 						if(!queue1.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue1.remove();
+								pifb = queue1.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -341,7 +339,7 @@ public class Scheduler {
 						else if(!queue2.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue2.remove();
+								pifb = queue2.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -351,7 +349,7 @@ public class Scheduler {
 						else if(!queue3.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue3.remove();
+								pifb = queue3.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -362,7 +360,7 @@ public class Scheduler {
 						else if(!queue4.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue4.remove();
+								pifb = queue4.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -373,7 +371,7 @@ public class Scheduler {
 						else if(!queue5.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue5.remove();
+								pifb = queue5.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -384,7 +382,7 @@ public class Scheduler {
 						else if(!queue6.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue6.remove();
+								pifb = queue6.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -394,7 +392,7 @@ public class Scheduler {
 						else if(!queue7.isEmpty()) {
 							try {
 								isOnCPU = true;
-								processInfoFB = queue7.remove();
+								pifb = queue7.remove();
 							}
 							catch (NullPointerException e) {
 								System.out.println("villa" + e);
@@ -406,43 +404,44 @@ public class Scheduler {
 						e1.printStackTrace();
 					}
 
-					processExecution.switchToProcess(processInfoFB.processID);
+					processExecution.switchToProcess(pifb.processID);
 					lastStartTime = System.currentTimeMillis();
 
 
 					long quantumCheck = lastStartTime + quantum;
-					while((!finishArray.contains(processInfoFB.processID))){
+					while((!finishArray.contains(pifb.processID))){
 						if(System.currentTimeMillis() >= quantumCheck){
 							break;
 						}
 					}
-					processInfoFB.incrementQueueCounter();
+					
+					pifb.incrementQueueCounter();
 
 					try {
 						queueMutex.acquire();
-						int count =  processInfoFB.getQueueForProcess();
-						if (!finishArray.contains(processInfoFB.processID)) {
+						int count =  pifb.getQueueForProcess();
+						if (!finishArray.contains(pifb.processID)) {
 							switch (count) {
 								case 1:
-									queue1.add(processInfoFB);
+									queue1.add(pifb);
 									break;
 								case 2:
-									queue2.add(processInfoFB);
+									queue2.add(pifb);
 									break;
 								case 3:
-									queue3.add(processInfoFB);
+									queue3.add(pifb);
 									break;
 								case 4:
-									queue4.add(processInfoFB);
+									queue4.add(pifb);
 									break;
 								case 5:
-									queue5.add(processInfoFB);
+									queue5.add(pifb);
 									break;
 								case 6:
-									queue6.add(processInfoFB);
+									queue6.add(pifb);
 									break;
 								case 7:
-									queue7.add(processInfoFB);
+									queue7.add(pifb);
 									break;
 							}
 						}
