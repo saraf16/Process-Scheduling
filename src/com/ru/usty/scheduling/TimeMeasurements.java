@@ -7,11 +7,13 @@ public class TimeMeasurements {
 	public long onCPU;
 	public long waitingTime;
 	public long executionTime;	
+	public boolean RRcheck;
 	
 	public TimeMeasurements(long arrivalTime){
 		this.arrivalTime = arrivalTime;
 		this.onCPU = 0;
 		this.executionTime = 0;
+		this.RRcheck = false;
 	}
 	
 	public long responseTime () {

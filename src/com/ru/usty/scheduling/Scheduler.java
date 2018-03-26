@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 
 import com.ru.usty.scheduling.process.ProcessExecution;
-import com.ru.usty.scheduling.process.ProcessInfo;
 import com.ru.usty.scheduling.ShortestProcessNext;
 
 public class Scheduler {
@@ -19,6 +18,7 @@ public class Scheduler {
 	boolean kill;
 
 	Queue<Integer> queue;
+	Queue<Integer> queue1, queue2, queue3, queue4, queue5, queue6, queue7;
 	Comparator<Integer> comparator;
 	PriorityQueue<Integer> queueP;
 	ArrayList<Integer> finishArray;
@@ -26,6 +26,7 @@ public class Scheduler {
 	ArrayList<Long> responseTimes;
 	ArrayList<Long> turnaroundTimes;
 	Thread rrThread;
+	Thread fThread;
 	Semaphore queueMutex;
 	Semaphore arrayMutex;
 	long lastStartTime;
@@ -68,8 +69,9 @@ public class Scheduler {
 			finishArray = new ArrayList<Integer>();
 			queueMutex = new Semaphore(1);
 			arrayMutex = new Semaphore(1);
-			this.rrThread = new Thread(newRunnable());
+			this.rrThread = new Thread(roundRobinRunnable());
 			runThread = false;
+			counter = 0;
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
@@ -94,9 +96,20 @@ public class Scheduler {
 			break;
 		case FB: // Feedback
 			System.out.println("Starting new scheduling task: Feedback, quantum = " + quantum);
-			/**
-			 * Add your policy specific initialization code here (if needed)
-			 */
+			if (fThread != null && fThread.isAlive()) {
+				System.out.println("Thread is dying !!!");
+				try {
+					kill = true;
+					fThread.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			kill = false;
+			
+			this.fThread = new Thread(feedbackRunnable());
+			runThread = false;
+			queue = new LinkedList<Integer>();
 			break;
 		}
 
@@ -210,6 +223,11 @@ public class Scheduler {
 			finishArray.add(processID);
 			timeMeasurements.executionTime = System.currentTimeMillis();
 			turnaroundTimes.add(timeMeasurements.turnaroundTime());
+			counter++;
+			
+			if(counter == 15) {
+				calculateTimes();
+			}
 			
 			break;
 		case SPN: // Shortest process next
@@ -284,7 +302,22 @@ public class Scheduler {
 		System.out.println("Average turnaround time for " + this.policy + ": " + sum2/turnaroundTimes.size());
 	}
 
-	private Runnable newRunnable() {
+	
+	private Runnable feedbackRunnable() {
+		// TODO Auto-generated method stub
+		return new Runnable() {
+			@Override
+			public void run() {
+				
+			}
+		};
+	}
+	
+	
+	
+	
+	
+	private Runnable roundRobinRunnable() {
 		return new Runnable() {
 			@Override
 			public void run() {
@@ -295,8 +328,13 @@ public class Scheduler {
 							isOnCPU = true;
 							try {
 								processRunning = queue.remove();
-								timeMeasurements.onCPU = System.currentTimeMillis();
-								responseTimes.add(timeMeasurements.responseTime());
+								if(!timeMeasurements.RRcheck) {
+									timeMeasurements.onCPU = System.currentTimeMillis();
+									responseTimes.add(timeMeasurements.responseTime());
+									timeMeasurements.RRcheck = true;
+								}
+								//timeMeasurements.onCPU = System.currentTimeMillis();
+								//responseTimes.add(timeMeasurements.responseTime());
 							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
@@ -310,7 +348,7 @@ public class Scheduler {
 					}
 					
 					long quantumCheck = lastStartTime + quantum;
-					while(!finishArray.contains(processRunning)){
+					while((!finishArray.contains(processRunning))){
 						if(System.currentTimeMillis() >= quantumCheck){
 							break;
 						}
@@ -328,7 +366,7 @@ public class Scheduler {
 					
 					if (kill) {
 						System.out.println("Thread is dying !#%$&&!");
-						calculateTimes();
+						//calculateTimes();
 						break;
 					}
 				}
