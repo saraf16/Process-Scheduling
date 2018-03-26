@@ -10,7 +10,7 @@ public class Scheduler {
 
 	ProcessExecution processExecution;
 	Policy policy;
-	
+
 	int quantum, processRunning, counter;
 	boolean isOnCPU, runThread, kill;
 
@@ -21,8 +21,8 @@ public class Scheduler {
 	ArrayList<Integer> finishArray;
 	TimeMeasurements timeMeasurements;
 	ArrayList<Long> responseTimes, turnaroundTimes;
-	Thread rrThread, fThread;
-	Semaphore queueMutex, arrayMutex;
+	Thread thread;
+	Semaphore queueMutex;
 	long lastStartTime;
 	ProcessInfoFeedback processInfoFB, pifb;
 
@@ -31,70 +31,69 @@ public class Scheduler {
 	}
 
 	public void startScheduling(Policy policy, int quantum) {
-		
+
 		this.policy = policy;
 		this.quantum = quantum;
 		this.isOnCPU = false;
-		
+
 		switch (policy) {
 		case FCFS: // First-come-first-served
 			System.out.println("Starting new scheduling task: First-come-first-served");
 			responseTimes = new ArrayList<Long>();
-			turnaroundTimes  = new ArrayList<Long>();
+			turnaroundTimes = new ArrayList<Long>();
 			queue = new LinkedList<Integer>();
 			break;
 		case RR: // Round robin
-			if (rrThread != null && rrThread.isAlive()) {
+			if (thread != null && thread.isAlive()) {
 				System.out.println("Thread is dying !!!");
 				try {
 					kill = true;
-					rrThread.join();
+					thread.join();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 			kill = false;
-			
+
 			System.out.println("Starting new scheduling task: Round robin, quantum = " + quantum);
-			
+
 			responseTimes = new ArrayList<Long>();
-			turnaroundTimes  = new ArrayList<Long>();
-			
+			turnaroundTimes = new ArrayList<Long>();
+
 			queue = new LinkedList<Integer>();
 			finishArray = new ArrayList<Integer>();
 			queueMutex = new Semaphore(1);
-			arrayMutex = new Semaphore(1);
-			this.rrThread = new Thread(roundRobinRunnable());
+			this.thread = new Thread(roundRobinRunnable());
 			runThread = false;
 			counter = 0;
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Starting new scheduling task: Shortest process next");
 			responseTimes = new ArrayList<Long>();
-			turnaroundTimes  = new ArrayList<Long>();
+			turnaroundTimes = new ArrayList<Long>();
 			comparator = new ShortestProcessNext(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case SRT: // Shortest remaining time
 			System.out.println("Starting new scheduling task: Shortest remaining time");
 			responseTimes = new ArrayList<Long>();
-			turnaroundTimes  = new ArrayList<Long>();
+			turnaroundTimes = new ArrayList<Long>();
 			comparator = new ShortestRemainingTime(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case HRRN: // Highest response ratio next
 			System.out.println("Starting new scheduling task: Highest response ratio next");
 			responseTimes = new ArrayList<Long>();
-			turnaroundTimes  = new ArrayList<Long>();
+			turnaroundTimes = new ArrayList<Long>();
 			comparator = new HighestResponseRatio(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
 			break;
 		case FB: // Feedback
-			if (fThread != null && fThread.isAlive()) {
+			if (thread != null && thread.isAlive()) {
 				System.out.println("Thread is dying !!!");
 				try {
 					kill = true;
-					fThread.join();
+					thread.join();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -102,20 +101,19 @@ public class Scheduler {
 			kill = false;
 
 			System.out.println("Starting new scheduling task: Feedback, quantum = " + quantum);
-			queue1= new LinkedList<ProcessInfoFeedback>();
-			queue2= new LinkedList<ProcessInfoFeedback>();
-			queue3= new LinkedList<ProcessInfoFeedback>();
-			queue4= new LinkedList<ProcessInfoFeedback>();
-			queue5= new LinkedList<ProcessInfoFeedback>();
-			queue6= new LinkedList<ProcessInfoFeedback>();
-			queue7= new LinkedList<ProcessInfoFeedback>();
+			queue1 = new LinkedList<ProcessInfoFeedback>();
+			queue2 = new LinkedList<ProcessInfoFeedback>();
+			queue3 = new LinkedList<ProcessInfoFeedback>();
+			queue4 = new LinkedList<ProcessInfoFeedback>();
+			queue5 = new LinkedList<ProcessInfoFeedback>();
+			queue6 = new LinkedList<ProcessInfoFeedback>();
+			queue7 = new LinkedList<ProcessInfoFeedback>();
 			finishArray = new ArrayList<Integer>();
 			queueMutex = new Semaphore(1);
-			arrayMutex = new Semaphore(1);
 			counter = 0;
-			this.fThread = new Thread(FeedbackRunnable());
+			this.thread = new Thread(FeedbackRunnable());
 			responseTimes = new ArrayList<Long>();
-			turnaroundTimes  = new ArrayList<Long>();
+			turnaroundTimes = new ArrayList<Long>();
 			runThread = false;
 			break;
 		}
@@ -137,7 +135,7 @@ public class Scheduler {
 			break;
 		case RR: // Round robin
 			if (runThread == false) {
-				rrThread.start();
+				thread.start();
 				runThread = true;
 			}
 			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
@@ -195,7 +193,7 @@ public class Scheduler {
 			processInfoFB = new ProcessInfoFeedback(processID);
 			timeMeasurements = new TimeMeasurements(System.currentTimeMillis());
 			if (runThread == false) {
-				fThread.start();
+				thread.start();
 				runThread = true;
 			}
 			try {
@@ -207,7 +205,6 @@ public class Scheduler {
 			}
 			break;
 		}
-		
 
 	}
 
@@ -225,11 +222,11 @@ public class Scheduler {
 			} else {
 				isOnCPU = false;
 			}
-			
-			if (queue.isEmpty() && isOnCPU == false){
+
+			if (queue.isEmpty() && isOnCPU == false) {
 				calculateTimes();
 			}
-			
+
 			break;
 		case RR: // Round robin
 			System.out.println("Finish " + processID);
@@ -237,11 +234,11 @@ public class Scheduler {
 			timeMeasurements.executionTime = System.currentTimeMillis();
 			turnaroundTimes.add(timeMeasurements.turnaroundTime());
 			counter++;
-			
-			if(counter == 15) {
+
+			if (counter == 15) {
 				calculateTimes();
 			}
-			
+
 			break;
 		case SPN: // Shortest process next
 			System.out.println("Finish " + processID);
@@ -255,8 +252,8 @@ public class Scheduler {
 			} else {
 				isOnCPU = false;
 			}
-			
-			if (queueP.isEmpty() && isOnCPU == false){
+
+			if (queueP.isEmpty() && isOnCPU == false) {
 				calculateTimes();
 			}
 			break;
@@ -273,7 +270,7 @@ public class Scheduler {
 			} else {
 				isOnCPU = false;
 			}
-			if (queueP.isEmpty() && isOnCPU == false){
+			if (queueP.isEmpty() && isOnCPU == false) {
 				calculateTimes();
 			}
 			break;
@@ -289,7 +286,7 @@ public class Scheduler {
 			} else {
 				isOnCPU = false;
 			}
-			if (queueP.isEmpty() && isOnCPU == false){
+			if (queueP.isEmpty() && isOnCPU == false) {
 				calculateTimes();
 			}
 			break;
@@ -298,29 +295,28 @@ public class Scheduler {
 			timeMeasurements.executionTime = System.currentTimeMillis();
 			turnaroundTimes.add(timeMeasurements.turnaroundTime());
 			counter++;
-			
-			if(counter == 15) {
+
+			if (counter == 15) {
 				calculateTimes();
 			}
 			break;
 		}
 	}
-	
+
 	void calculateTimes() {
 		long sum1 = 0;
 		long sum2 = 0;
-		for(long t: responseTimes) {
+		for (long t : responseTimes) {
 			sum1 += t;
 		}
-		for(long t: turnaroundTimes) {
+		for (long t : turnaroundTimes) {
 			sum2 += t;
 		}
-		
-		System.out.println("Average response time for " + this.policy + ": " + sum1/responseTimes.size());
-		System.out.println("Average turnaround time for " + this.policy + ": " + sum2/turnaroundTimes.size());
+
+		System.out.println("Average response time for " + this.policy + ": " + sum1 / responseTimes.size());
+		System.out.println("Average turnaround time for " + this.policy + ": " + sum2 / turnaroundTimes.size());
 	}
 
-	
 	private Runnable FeedbackRunnable() {
 		return new Runnable() {
 			@Override
@@ -328,80 +324,64 @@ public class Scheduler {
 				while (true) {
 					try {
 						queueMutex.acquire();
-						if(!queue1.isEmpty()) {
+						if (!queue1.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue1.remove();
-								if(!timeMeasurements.fCheck) {
+								if (!timeMeasurements.fCheck) {
 									timeMeasurements.onCPU = System.currentTimeMillis();
 									responseTimes.add(timeMeasurements.responseTime());
 									timeMeasurements.fCheck = true;
 								}
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
-						}
-						else if(!queue2.isEmpty()) {
+						} else if (!queue2.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue2.remove();
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
-						}
-						else if(!queue3.isEmpty()) {
+						} else if (!queue3.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue3.remove();
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
-
-						}
-						else if(!queue4.isEmpty()) {
+						} else if (!queue4.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue4.remove();
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
-
-						}
-						else if(!queue5.isEmpty()) {
+						} else if (!queue5.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue5.remove();
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
-
-						}
-						else if(!queue6.isEmpty()) {
+						} else if (!queue6.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue6.remove();
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
-						}
-						else if(!queue7.isEmpty()) {
+						} else if (!queue7.isEmpty()) {
 							try {
 								isOnCPU = true;
 								pifb = queue7.remove();
-							}
-							catch (NullPointerException e) {
+							} catch (NullPointerException e) {
 								System.out.println("villa" + e);
 							}
 
@@ -414,48 +394,47 @@ public class Scheduler {
 					processExecution.switchToProcess(pifb.processID);
 					lastStartTime = System.currentTimeMillis();
 
-
 					long quantumCheck = lastStartTime + quantum;
-					while((!finishArray.contains(pifb.processID))){
-						if(System.currentTimeMillis() >= quantumCheck){
+					while ((!finishArray.contains(pifb.processID))) {
+						if (System.currentTimeMillis() >= quantumCheck) {
 							break;
 						}
 					}
-					
+
 					try {
-						Thread.sleep(5);
+						Thread.sleep(7);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					
+
 					pifb.incrementQueueCounter();
 
 					try {
 						queueMutex.acquire();
-						int count =  pifb.getQueueForProcess();
+						int count = pifb.getQueueForProcess();
 						if (!finishArray.contains(pifb.processID)) {
 							switch (count) {
-								case 1:
-									queue1.add(pifb);
-									break;
-								case 2:
-									queue2.add(pifb);
-									break;
-								case 3:
-									queue3.add(pifb);
-									break;
-								case 4:
-									queue4.add(pifb);
-									break;
-								case 5:
-									queue5.add(pifb);
-									break;
-								case 6:
-									queue6.add(pifb);
-									break;
-								case 7:
-									queue7.add(pifb);
-									break;
+							case 1:
+								queue1.add(pifb);
+								break;
+							case 2:
+								queue2.add(pifb);
+								break;
+							case 3:
+								queue3.add(pifb);
+								break;
+							case 4:
+								queue4.add(pifb);
+								break;
+							case 5:
+								queue5.add(pifb);
+								break;
+							case 6:
+								queue6.add(pifb);
+								break;
+							case 7:
+								queue7.add(pifb);
+								break;
 							}
 						}
 						queueMutex.release();
@@ -470,7 +449,7 @@ public class Scheduler {
 			}
 		};
 	}
-	
+
 	private Runnable roundRobinRunnable() {
 		return new Runnable() {
 			@Override
@@ -482,7 +461,7 @@ public class Scheduler {
 							isOnCPU = true;
 							try {
 								processRunning = queue.remove();
-								if(!timeMeasurements.RRcheck) {
+								if (!timeMeasurements.RRcheck) {
 									timeMeasurements.onCPU = System.currentTimeMillis();
 									responseTimes.add(timeMeasurements.responseTime());
 									timeMeasurements.RRcheck = true;
@@ -498,19 +477,19 @@ public class Scheduler {
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
-					
+
 					long quantumCheck = lastStartTime + quantum;
-					while((!finishArray.contains(processRunning))){
-						if(System.currentTimeMillis() >= quantumCheck){
+					while ((!finishArray.contains(processRunning))) {
+						if (System.currentTimeMillis() >= quantumCheck) {
 							break;
 						}
 					}
 					try {
-						Thread.sleep(5);
+						Thread.sleep(7);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					
+
 					try {
 						queueMutex.acquire();
 						if (!finishArray.contains(processRunning)) {
@@ -520,7 +499,7 @@ public class Scheduler {
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					
+
 					if (kill) {
 						break;
 					}
