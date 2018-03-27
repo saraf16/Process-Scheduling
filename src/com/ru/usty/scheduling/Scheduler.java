@@ -86,6 +86,7 @@ public class Scheduler {
 			timeMeasurements = new ArrayList<TimeMeasurements>();
 			comparator = new HighestResponseRatio(this);
 			queueP = new PriorityQueue<Integer>(10, comparator);
+			queue = new LinkedList<Integer>();
 			counter = 0;
 			break;
 		case FB: // Feedback
@@ -269,6 +270,7 @@ public class Scheduler {
 			System.out.println("Finish " + processID);
 			timeMeasurements.get(processID).executionTime = System.currentTimeMillis();
 			if (!queueP.isEmpty() && isOnCPU == true) {
+				evaluateHRRN();
 				int newprocess = queueP.remove();
 				processExecution.switchToProcess(newprocess);
 				timeMeasurements.get(newprocess).onCPU = System.currentTimeMillis();
@@ -289,6 +291,15 @@ public class Scheduler {
 				calculateTimes();
 			}
 			break;
+		}
+	}
+
+	void evaluateHRRN() {
+		while (!queueP.isEmpty()) {
+			queue.add(queueP.remove());
+		}
+		while (!queue.isEmpty()) {
+			queueP.add(queue.remove());
 		}
 	}
 
@@ -316,11 +327,6 @@ public class Scheduler {
 							try {
 								isOnCPU = true;
 								pifb = queue1.remove();
-								//if (!timeMeasurements.fCheck) {
-								//	timeMeasurements.onCPU = System.currentTimeMillis();
-								//	responseTimes.add(timeMeasurements.responseTime());
-								//	timeMeasurements.fCheck = true;
-								//}
 								if(!timeMeasurements.get(pifb.processID).fCheck) {
 									timeMeasurements.get(pifb.processID).onCPU = System.currentTimeMillis();
 									timeMeasurements.get(pifb.processID).fCheck = true;
